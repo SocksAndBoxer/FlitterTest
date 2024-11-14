@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import './App.css'
 import { useMutation } from '@tanstack/react-query'
+import { TCarInfo } from './types'
+import { SearchcarByImmat } from './components/SearchCarByImmat'
+import { FinitionsList } from './components/FinitionsList'
 
-type TFinition = { value: string; label: string }
-
-type TCarInfo = {
-  modele: string
-  finitions: { version: string[] }
-}
+export type TFinition = { value: string; label: string }
 
 const App = () => {
   const [finitions, setFinitions] = useState<TFinition[]>([])
@@ -17,8 +15,6 @@ const App = () => {
 
   const {
     isPending,
-    isError,
-    isSuccess,
     data,
     mutate: fetchCarByImmat,
   } = useMutation({
@@ -30,9 +26,12 @@ const App = () => {
     },
     onError: err => {
       setErrorImmat('Une erreur est survenue')
+      setNoCarFound(true)
       console.log(err)
     },
     onSuccess: data => {
+      setNoCarFound(false)
+
       if (data.finitions.version.length === 0) {
         setErrorImmat('Aucune version trouvée')
       }
@@ -57,7 +56,6 @@ const App = () => {
    */
   const onSubmit = (e: any) => {
     e.preventDefault()
-    console.log('test')
 
     let regCharacters = /^[a-zA-Z0-9-\-\s]*$/
 
@@ -92,42 +90,14 @@ const App = () => {
             </span>
           </div>
         </div>
-        <form onSubmit={onSubmit} className='space-y-4'>
-          <div>
-            <input
-              name='immat'
-              value={immat}
-              onChange={e => setImmat(e.target.value)}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md'
-              placeholder="Entrez votre plaque d'immatriculation"
-            />
-          </div>
-          {noCarFound && (
-            <p className='text-red-500 text-sm'>
-              Nous n'avons pas trouvé votre véhicule
-            </p>
-          )}
-          {errorImmat && <p className='text-red-500 text-sm'>{errorImmat}</p>}
-          <button
-            type='submit'
-            className='w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
-          >
-            Rechercher
-          </button>
-        </form>
-        {finitions.length > 0 && (
-          <div className='mt-6 space-y-2'>
-            <h3 className='text-lg font-semibold text-gray-700'>Finitions:</h3>
-            {finitions.map(option => (
-              <div
-                key={option.value}
-                className='p-2 bg-gray-50 rounded-md text-gray-700'
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
-        )}
+        <SearchcarByImmat
+          errorImmat={errorImmat}
+          immat={immat}
+          noCarFound={noCarFound}
+          onSubmit={onSubmit}
+          setImmat={setImmat}
+        />
+        {finitions.length > 0 && <FinitionsList finitions={finitions} />}
       </div>
     </div>
   )
