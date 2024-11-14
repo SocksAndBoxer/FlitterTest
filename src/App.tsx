@@ -4,11 +4,13 @@ import { useMutation } from '@tanstack/react-query'
 import { TCarInfo } from './types'
 import { SearchcarByImmat } from './components/SearchCarByImmat'
 import { FinitionsList } from './components/FinitionsList'
+import { CarModelInfos } from './components/CarModelInfos'
 
 export type TFinition = { value: string; label: string }
 
 const App = () => {
   const [finitions, setFinitions] = useState<TFinition[]>([])
+  const [details, setDetails] = useState<Omit<TCarInfo, 'finitions'>>()
   const [immat, setImmat] = useState('')
   const [noCarFound, setNoCarFound] = useState(false)
   const [errorImmat, setErrorImmat] = useState('')
@@ -26,6 +28,8 @@ const App = () => {
     },
     onError: err => {
       setErrorImmat('Une erreur est survenue')
+      setDetails(undefined)
+      setFinitions([])
       setNoCarFound(true)
       console.log(err)
     },
@@ -40,14 +44,18 @@ const App = () => {
         setErrorImmat('Aucune version trouvée')
       }
 
-      const finitions =
-        data.finitions.version.map(
+      const { finitions, ...details } = data
+
+      const transformedFinitions =
+        finitions.version.map(
           (version: string): TFinition => ({
             value: version,
             label: version.toUpperCase(),
           })
         ) || []
-      setFinitions(finitions)
+
+      setFinitions(transformedFinitions)
+      setDetails(details)
     },
   })
 
@@ -68,20 +76,8 @@ const App = () => {
     fetchCarByImmat(immat.split(' ').join('').split('-').join(''))
   }
 
-  if ((!data || !data.modele) && !isPending) {
-    const finitions =
-      data?.finitions?.version?.map(
-        (version: string): TFinition => ({
-          value: version,
-          label: version.toUpperCase(),
-        })
-      ) || []
-  }
-
-  if (isPending) return <></>
-
   return (
-    <div className='flex items-center justify-center min-h-screen bg-gray-100'>
+    <div className='flex items-center justify-center min-h-screen bg-gray-100 gap-2'>
       <div className='w-full max-w-md p-6 bg-white rounded-lg shadow-md'>
         <div className='mb-4'>
           <div className='inline-flex items-center px-3 py-1 bg-blue-100 rounded-md'>
@@ -99,6 +95,11 @@ const App = () => {
         />
         {finitions.length > 0 && <FinitionsList finitions={finitions} />}
       </div>
+      {details && (
+        <div className='w-full max-w-md p-6 bg-white rounded-lg shadow-md'>
+          <CarModelInfos details={details} />
+        </div>
+      )}
     </div>
   )
 }
